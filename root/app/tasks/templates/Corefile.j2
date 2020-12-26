@@ -1,0 +1,9 @@
+. {
+    forward . {{ dnses }}
+    reload
+}
+{{ domains }} {
+    hosts /config/zt.hosts
+    log
+    errors
+}

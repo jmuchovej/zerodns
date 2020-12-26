@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv bash
+
+# Re-run PyInvoke: Update CoreDNS
+/app/inv ztdns.update-coredns
