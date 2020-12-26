@@ -28,11 +28,16 @@ ztdns
 1. Find the "API Access Tokens" section
 1. Create a "New Token"
 
-**NOTE:** _Don't store this in a publicly accessible folder/repository. It gives wide-ranging privileges to your ZeroTier account.
+**NOTE:** _Don't store this in a publicly accessible folder/repository_. It gives wide-ranging privileges to your ZeroTier account.
 
 ### Why does DNS.zt need my `access_token`?
 
 We use your `access_token` to query your ZeroTier networks by name. The entire "API" is read-only, and you can validate that by looking at [tasks/ztapi.py](root/app/tasks/ztapi.py).
+
+## Current limitations
+
+1. Doesn't play nicely with VPNs (tested on Mullvad, Proton, TunnelBear, PIA)
+1. Requires your host to be running `zerotier-one`.
 
 <!-- https://ragingtiger.github.io/2020/01/03/docker-local-dns/ -->
 <!-- https://github.com/coredns/deployment/blob/aba0245/docker/dns.yml -->

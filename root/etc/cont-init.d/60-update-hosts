@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv bash
+
+# Re-run PyInvoke: Update Hosts
+/app/inv ztdns.update-hosts
