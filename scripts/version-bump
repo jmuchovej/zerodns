@@ -31,7 +31,7 @@ class Version:
         return str(self) == str(other)
 
 if __name__ == "__main__":
-    assert version_info.major == 3 and version_info.minor >= 7
+    assert version_info.major == 3 and version_info.minor >= 6
     url = "https://api.github.com/repos/coredns/coredns/releases/latest"
     release = json.loads(requests.get(url).content)
 
