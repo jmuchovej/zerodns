@@ -13,7 +13,9 @@ jobs:
       uses: actions/checkout@v2
     - id: bump
       name: "Version Bump"
-      run: ./scripts/version-bump
+      run: |
+        pip3 install -r ./scripts/requirements.txt -q --no-input
+        ./scripts/version-bump
     - id: release
       if: ${{ steps.bump.outputs.createRelease }}
       name: "Create Release"
