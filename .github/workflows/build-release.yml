@@ -1,0 +1,28 @@
+name: Build & Push
+
+on:
+  release:
+    types: [published, ]
+
+jobs:
+  build-dev:
+    runs-on: ubuntu-latest
+    steps:
+    - id: checkout
+      name: "Checkout"
+      uses: actions/checkout@v2
+    - id: version
+      name: Get Version
+      run: ./scripts/version-bump
+    - name: "Build and push Docker images"
+      uses: docker/build-push-action@v2.2.1
+      with:
+        push: true
+        tags: |
+          ionlights/ztdns:latest
+          ionlights/ztdns:${{ github.ref }}
+        build-args: |
+          BUILD_DATE=$(date)
+          ZeroDNS=${{ github.ref }}
+          CoreDNS=${{ steps.bump.outputs.vCoreDNS }}
+          CoreDNSpkg=${{ steps.outputs.bump.CoreDNSpkg }}
