@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     image = os.environ["GITHUB_REPOSITORY"]
     client = docker.from_env()
-    client.images.pull(f"{image}:latest")
+    client.images.pull(f"{image}", tag="latest")
     container = client.images.get(f"{image}:latest")
     labels = container.attrs["Config"]["Labels"]
 
