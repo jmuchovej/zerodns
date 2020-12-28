@@ -1,0 +1,90 @@
+#!/usr/bin/env python3.7
+import json
+import textwrap
+from collections import namedtuple
+
+import docker
+import requests
+
+
+class Version:
+    """An over-engineered `Version` to make version-checking more readable.
+    """
+    def __init__(self, version: str) -> None:
+        version = tuple(version.split("."))
+
+        try:
+            assert len(version) == 3
+        except AssertionError:
+            # TODO open PR signalling change in versioning
+            raise TypeError("CoreDNS has changed versioning.")
+
+        self.major = int(version[0].replace("v", ""))
+        self.minor = int(version[1])
+        self.patch = int(version[2])
+
+    def __str__(self) -> str:
+        return "v" + ".".join([self.major, self.minor, self.patch])
+
+    def __eq__(self, other) -> bool:
+        return str(self) == str(other)
+
+if __name__ == "__main__":
+    url = "https://api.github.com/repos/coredns/coredns/releases/latest"
+    release = json.loads(requests.get(url).content)
+
+    client = docker.from_env()
+    container = client.images.get("ionlights/ztdns:latest")
+    labels = container.attrs["Config"]["Labels"]
+
+    v_CoreDNS = Version(release["name"])
+    v_CoreZeroDNS = Version(labels["vCoreDNS"])
+    v_ZeroDNS = Version(labels["vZeroDNS"])
+
+    if v_CoreDNS == v_CoreZeroDNS:
+        print(f"::set-output name=differs::false")
+        print(f"::set-output name=createRelease::false")
+        exit(0)
+
+    try:
+        assert CoreDNS.patch.isdigit()
+    except AssertionError:
+        # TODO don't assign "latest" tag
+        raise ValueError(f"{vCoreDNS} is a beta/release-candidate")
+        
+    body = f"""
+    - CoreDNS Version: `{v_CoreZeroDNS}` -> `{v_CoreDNS}`
+    - Inspect the changes [here]({release["url"]}).
+    """
+
+    if v_CoreDNS.major != v_CoreZeroDNS.major:
+        # TODO open PR stating major version change
+        make_release = False
+        body = f"""
+        ## Major Version Upgrade
+        {body}
+        """
+    elif v_CoreDNS.minor != v_CoreZeroDNS.minor:
+        # TODO open PR stating minor version change
+        should_release = True
+        body = f"""
+        ## Minor Version Upgrade
+        {body}
+        """
+        v_ZeroDNS.patch += 1
+    elif v_CoreDNS.patch != v_CoreZeroDNS.patch:
+        # TODO upstream patches should be mergable
+        should_release = True
+        body = f"""
+        ## Patch Version Upgrade
+        {body}
+        """
+        v_ZeroDNS.patch += 1
+
+    pkg_url = next(filter(lambda x: "linux_amd64" in x["name"], release["assets"]))
+
+    print(f"::set-output name=createRelease::{str(should_release).lower()}")
+    print(f"::set-output name=vCoreDNS::{CoreDNS}")
+    print(f"::set-output name=CoreDNSpkg::{pkg_url['browser_download_url']}")
+    print(f"::set-output name=vZeroDNS::{CoreDNS}")
+    print(f"::set-output name=body::{textwrap.dedent(body)}")

@@ -1,0 +1,25 @@
+name: Version Bump
+
+on:
+  schedule:
+    - cron: "0 4 * * *"  # everyday at 4am
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    steps:
+    - id: checkout
+      name: "Checkout"
+      uses: actions/checkout@v2
+    - id: bump
+      name: "Version Bump"
+      run: ./scripts/version-bump
+    - id: release
+      if: ${{ steps.bump.outputs.createRelease }}
+      name: "Create Release"
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ steps.bump.outputs.vZeroDNS }}
+        release_name: "Upgrade to CoreDNS: ${{ steps.bump.outputs.vCoreDNS }}"
+        body: ${{ steps.bump.outputs.body }}
+        prerelease: true
