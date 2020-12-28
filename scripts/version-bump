@@ -1,7 +1,8 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3
 import json
 import textwrap
 from collections import namedtuple
+from sys import version_info
 
 import docker
 import requests
@@ -30,6 +31,7 @@ class Version:
         return str(self) == str(other)
 
 if __name__ == "__main__":
+    assert version_info.major == 3 and version_info.minor >= 7
     url = "https://api.github.com/repos/coredns/coredns/releases/latest"
     release = json.loads(requests.get(url).content)
 
