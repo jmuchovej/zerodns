@@ -11,20 +11,39 @@ jobs:
     - id: checkout
       name: "Checkout"
       uses: actions/checkout@v2
+    - id: tag
+      name: "Extract Tag"
+      run: |
+        echo "::set-output name=name::$(basename ${{ github.ref }})"
     - id: version
       name: Get Version
       run: |
         pip3 install -r ./scripts/requirements.txt -q --no-input
         ./scripts/version-bump
+    # - id: login-dockerhub-registry
+    #   name: "Login to DockerHub Registry"
+    #   uses: docker/login-action@v1
+    #   with:
+    #       username: ${{ secrets.DOCKERHUB_USERNAME }}
+    #       password: ${{ secrets.DOCKERHUB_TOKEN }}
+    # - id: login-github-package-registry
+    #   name: "Login to GitHub Container Registry"
+    #   uses: docker/login-action@v1
+    #   with:
+    #     registry: ghcr.io
+    #     username: ${{ github.repository_owner }}
+    #     password: ${{ secrets.CR_PAT }}
     - name: "Build and push Docker images"
       uses: docker/build-push-action@v2.2.1
       with:
         push: true
         tags: |
-          ionlights/ztdns:latest
-          ionlights/ztdns:${{ github.ref }}
+          ${{ github.repository }}:latest
+          ${{ github.repository }}:${{ steps.tag.outputs.name }}
+          ghcr.io/${{ github.repository }}:latest
+          ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.name }}
         build-args: |
           BUILD_DATE=$(date)
-          ZeroDNS=${{ github.ref }}
+          ZeroDNS=${{ steps.tag.outputs.name }}
           CoreDNS=${{ steps.bump.outputs.vCoreDNS }}
           CoreDNSpkg=${{ steps.outputs.bump.CoreDNSpkg }}
