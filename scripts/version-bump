@@ -1,4 +1,5 @@
 #!/usr/bin/env python3.6
+import os
 import json
 import textwrap
 from collections import namedtuple
@@ -35,8 +36,10 @@ if __name__ == "__main__":
     url = "https://api.github.com/repos/coredns/coredns/releases/latest"
     release = json.loads(requests.get(url).content)
 
+    image = os.environ["GITHUB_REPOSITORY"]
     client = docker.from_env()
-    container = client.images.get("ionlights/ztdns:latest")
+    client.images.pull(f"{image}:latest")
+    container = client.images.get(f"{image}:latest")
     labels = container.attrs["Config"]["Labels"]
 
     v_CoreDNS = Version(release["name"])
