@@ -53,10 +53,10 @@ if __name__ == "__main__":
         exit(0)
 
     try:
-        assert CoreDNS.patch.isdigit()
+        assert v_CoreDNS.patch.isdigit()
     except AssertionError:
         # TODO don't assign "latest" tag
-        raise ValueError(f"{vCoreDNS} is a beta/release-candidate")
+        raise ValueError(f"{v_CoreDNS} is a beta/release-candidate")
         
     body = f"""
     - CoreDNS Version: `{v_CoreZeroDNS}` -> `{v_CoreDNS}`
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     pkg_url = next(filter(lambda x: "linux_amd64" in x["name"], release["assets"]))
 
     print(f"::set-output name=createRelease::{str(should_release).lower()}")
-    print(f"::set-output name=vCoreDNS::{CoreDNS}")
+    print(f"::set-output name=vCoreDNS::{v_CoreDNS}")
     print(f"::set-output name=CoreDNSpkg::{pkg_url['browser_download_url']}")
-    print(f"::set-output name=vZeroDNS::{CoreDNS}")
+    print(f"::set-output name=vZeroDNS::{v_ZeroDNS}")
     print(f"::set-output name=body::{textwrap.dedent(body)}")
