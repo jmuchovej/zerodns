@@ -23,7 +23,10 @@ class Version:
 
         self.major = int(version[0].replace("v", ""))
         self.minor = int(version[1])
-        self.patch = int(version[2])
+        try:
+            self.patch = int(version[2])
+        except ValueError:
+            raise ValueError(f"{v_CoreDNS} is a beta/release-candidate")
 
     def __str__(self) -> str:
         version = [self.major, self.minor, self.patch]
@@ -52,12 +55,6 @@ if __name__ == "__main__":
         print(f"::set-output name=createRelease::false")
         exit(0)
 
-    try:
-        assert v_CoreDNS.patch.isdigit()
-    except AssertionError:
-        # TODO don't assign "latest" tag
-        raise ValueError(f"{v_CoreDNS} is a beta/release-candidate")
-        
     body = f"""
     - CoreDNS Version: `{v_CoreZeroDNS}` -> `{v_CoreDNS}`
     - Inspect the changes [here]({release["url"]}).
