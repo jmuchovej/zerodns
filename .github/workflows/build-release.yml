@@ -12,13 +12,10 @@ jobs:
       name: "Checkout"
       uses: actions/checkout@v2
     - id: meta
-      name: "Extract Tag"
+      name: "Gather Metadata for Container"
       run: |
         echo "::set-output name=tag::$(basename ${{ github.ref }})"
         echo "::set-output name=date::$(date)"
-    - id: version
-      name: Get Version
-      run: |
         pip3 install -r ./scripts/requirements.txt -q --no-input
         ./scripts/version-bump
     # - id: login-dockerhub-registry
@@ -49,6 +46,6 @@ jobs:
           ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tag }}
         build-args: |
           BUILD_DATE=${{ steps.meta.outputs.date }}
-          ZeroDNS=${{ steps.tag.outputs.name }}
-          CoreDNS=${{ steps.version.outputs.vCoreDNS }}
-          CoreDNSpkg=${{ steps.version.outputs.CoreDNSpkg }}
+          ZeroDNS=${{ steps.meta.outputs.tag }}
+          CoreDNS=${{ steps.meta.outputs.vCoreDNS }}
+          CoreDNSpkg=${{ steps.meta.outputs.CoreDNSpkg }}
