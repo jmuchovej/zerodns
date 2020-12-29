@@ -20,6 +20,8 @@ jobs:
       if: ${{ steps.bump.outputs.createRelease }}
       name: "Create Release"
       uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ steps.bump.outputs.vZeroDNS }}
         release_name: "Upgrade to CoreDNS: ${{ steps.bump.outputs.vCoreDNS }}"
