@@ -30,7 +30,7 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
-        password: ${{ secrets.TOKEN_DOCKER }}
+        password: ${{ secrets.TOKEN_GITHUB }}
     - id: setup-buildx
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
