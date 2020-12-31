@@ -27,14 +27,16 @@ def get(postfix: str, token: str):
     return json.loads(response.content.decode("utf-8"))
 
 
-def get_network(name: str, token: str):
+def get_network(lookup: str, token: str):
     networks = get("network", token)
 
-    for network in networks:
-        if network["config"]["name"] == name:
-            return network
-
-    raise ValueError(f"Could not find `{name}` in available networks.")
+    by_nm = next(filter(lambda x: x["config"]["name"] == lookup, networks), None)
+    by_id = next(filter(lambda x: x["config"]["id"] == lookup, networks), None)
+    try:
+        assert by_nm != by_id
+    except AssertionError:
+        raise ValueError(f"`{lookup}` was either not present in networks OR `{lookup}` is both the network name and network ID.")
+    return by_nm or by_id
 
 
 def get_clients(network_name: str, token: str):
