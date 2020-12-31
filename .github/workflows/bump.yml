@@ -17,7 +17,7 @@ jobs:
         pip3 install -r ./scripts/requirements.txt -q --no-input
         ./scripts/version-bump
     - id: release
-      if: ${{ steps.bump.outputs.createRelease }}
+      if: steps.bump.outputs.createRelease == 'true'
       name: "Create Release"
       uses: actions/create-release@v1
       env:
