@@ -1,4 +1,4 @@
-name: Build & Push
+name: Compile Release into Container
 
 on:
   release:
@@ -17,7 +17,7 @@ jobs:
         echo "::set-output name=tag::$(basename ${{ github.ref }})"
         echo "::set-output name=date::$(date)"
         pip3 install -r ./scripts/requirements.txt -q --no-input
-        ./scripts/version-bump
+        ./scripts/version-bump $(basename ${{ github.ref }})
     - id: login-dockerhub-registry
       name: "Login to DockerHub Registry"
       uses: docker/login-action@v1
