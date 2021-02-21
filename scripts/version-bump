@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
 import os
 import json
 from typing import Dict, Tuple
@@ -11,7 +11,7 @@ import requests
 from packaging.version import parse
 
 
-def get_upstream_CoreDNS_version():
+def get_upstream_CoreDNS_version(arm: bool):
     """Retrieves the latest CoreDNS release from the CoreDNS GitHub repository. Additionally provides the Package and Release URLs to use in ZeroDNS Docker container and Release Notes.
     """
     url = "https://api.github.com/repos/coredns/coredns/releases/latest"
@@ -19,7 +19,8 @@ def get_upstream_CoreDNS_version():
 
     CoreDNS = parse(release["tag_name"])
 
-    pkg_url = next(filter(lambda x: "linux_amd64" in x["name"], release["assets"]))
+    lookup = "linux_amd64" if not arm else "linux_arm64"
+    pkg_url = next(filter(lambda x: lookup in x["name"], release["assets"]))
     pkg_url = pkg_url["browser_download_url"]
     release_info = release["url"]
 
@@ -58,10 +59,10 @@ def ZeroDNS_update(vZeroDNS: str) -> Tuple[Dict, bool]:
     return outputs, c_ZeroDNS != ZeroDNS
 
 
-def CoreDNS_update() -> Tuple[Dict, bool]:
+def CoreDNS_update(arm: bool = False) -> Tuple[Dict, bool]:
     """Gathers CoreDNS version info, determines latest version, how it upgraded, and release contents.
     """
-    u_CoreDNS, pkg_url, release_info = get_upstream_CoreDNS_version()
+    u_CoreDNS, pkg_url, release_info = get_upstream_CoreDNS_version(arm)
     c_CoreDNS, _ = get_current_CoreDNS_version()
 
     CoreDNS = max(c_CoreDNS, u_CoreDNS)
@@ -84,11 +85,12 @@ if __name__ == "__main__":
 
     parser = ArgumentParser()
     parser.add_argument("vZeroDNS", nargs="?", type=str)
+    parser.add_argument("--arm", action="store_true")
     args = parser.parse_args()
 
     outputs = dict()
     out_ZeroDNS, diff_ZeroDNS = ZeroDNS_update(args.vZeroDNS or "")
-    out_CoreDNS, diff_CoreDNS = CoreDNS_update()
+    out_CoreDNS, diff_CoreDNS = CoreDNS_update(args.arm)
 
     outputs.update(out_ZeroDNS)
     outputs.update(out_CoreDNS)
