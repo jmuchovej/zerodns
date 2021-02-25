@@ -1,4 +1,0 @@
-invoke>=1.4
-jinja2>=2.11
-requests>=2.25
-word2number>=1.1

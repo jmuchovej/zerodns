@@ -1,0 +1,10 @@
+.:5053 {
+    errors
+    log
+    hosts /config/hosts {
+        reload 15m
+        fallthrough
+    }
+    forward . /etc/resolv.conf
+    reload 15m
+}

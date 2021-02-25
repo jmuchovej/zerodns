@@ -5,4 +5,4 @@ UMASK_SET=${UMASK_SET:-022}
 umask "$UMASK_SET"
 
 exec \
-    s6-setuidgid abc /usr/bin/coredns -conf /config/Corefile
+    s6-setuidgid abc /usr/bin/coredns -conf /app/Corefile

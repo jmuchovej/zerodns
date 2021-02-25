@@ -1,0 +1,5 @@
+#!/usr/bin/with-contenv bash
+
+[ -z ${ACCESS_TOKEN} ] && echo "Please provide an ACCESS_TOKEN" && exit 1
+
+ztc conf:set --token "${ACCESS_TOKEN}" >/dev/null 2>/dev/null

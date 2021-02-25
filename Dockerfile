@@ -1,51 +1,71 @@
-FROM ghcr.io/linuxserver/baseimage-ubuntu:focal
+# Build ZeroTier -----------------------------------------------------------------------
+FROM --platform=$TARGETPLATFORM lsiodev/ubuntu:focal as zerotier
+ARG ZeroTier
+
+RUN apt-get update -y && apt-get install -y git make gcc g++
+RUN git clone https://github.com/zerotier/ZeroTierOne /src
+WORKDIR /src
+
+RUN commit="$(git log ${ZeroTier} -n1 | head -1 | cut -d ' ' -f 2)" \
+    git reset --quiet --hard ${commit}
+RUN make -f make-linux.mk
+RUN chmod +x zerotier-one
+
+# Build CoreDNS ------------------------------------------------------------------------
+FROM --platform=$TARGETPLATFORM lsiodev/ubuntu:focal as coredns
+ARG CoreDNS
+
+RUN apt-get update -y && apt-get install -y git make golang
+RUN git clone https://github.com/coredns/coredns /src
+WORKDIR /src
+
+RUN commit="$(git log ${CoreDNS} -n1 | head -1 | cut -d ' ' -f 2)" \
+    git reset --quiet --hard ${commit}
+RUN make
+RUN chmod +x coredns
+
+# Setup ZeroDNS ------------------------------------------------------------------------
+FROM --platform=$TARGETPLATFORM lsiodev/ubuntu:focal as zerodns
 
 # set version label
-ARG BUIL_DATE
+ARG BUILD_DATE
 ARG ZeroDNS
 ARG CoreDNS
-ARG CoreDNSpkg
-LABEL build_version="DNS.zt version:- ${ZeroDNS} Build-date:- ${BUILD_DATE}"
-LABEL maintainer="ionlights"
+ARG ZeroTier
+LABEL build_version="ZeroDNS version:- ${ZeroDNS} Build-date:- ${BUILD_DATE}"
+LABEL maintainer="jmuchovej"
 LABEL vCoreDNS="${CoreDNS}"
 LABEL vZeroDNS="${ZeroDNS}"
+LABEL vZeroTier="${ZeroTier}"
 
 # environment settings
 ARG DEBIAN_FRONTEND="noninteractive"
-ENV HOME="/config" \
-XDG_CONFIG_HOME="/config" \
-XDG_DATA_HOME="/config"
-
-# add dependencies
-RUN echo "*** install packages ***" && \
-    apt-get update && \
-    apt-get install -y \
-        ca-certificates \
-        python3 \
-        python3-pip
-
-# install CoreDNS
-RUN echo "*** install CoreDNS ***" && \
-    curl -fsSL ${CoreDNSpkg} -o /tmp/coredns.tgz && \
-    tar -xzf /tmp/coredns.tgz && \
-    mv coredns /usr/bin/coredns && \
-    chmod +x /usr/bin/coredns
-
-# install Invoke
-COPY requirements.txt /tmp
-RUN echo "*** install Invoke ***" && \
-    pip3 install -r /tmp/requirements.txt
-
-RUN echo "*** cleanup ***" && \
- apt-get clean && \
- rm -rf \
-	/tmp/* \
-	/var/lib/apt/lists/* \
-	/var/tmp/*
 
 # add local files
 COPY root/ /
+COPY --from=zerotier /src/zerotier-one /usr/sbin/
+COPY --from=coredns /src/coredns /usr/bin/
+
+# add dependencies (this bloats the image quite a bit)
+RUN    echo "*** install ZeroDNS ***" \
+    && apt-get update -y \
+    && apt-get install -y ca-certificates python3 python3-pip npm nodejs iputils-ping net-tools \
+    && pip3 install -r /app/requirements.txt \
+    && npm install -g @laduke/zerotier-central-cli
+
+RUN    mkdir -p /var/lib/zerotier-one \
+    && ln -s /usr/sbin/zerotier-one /usr/sbin/zerotier-idtool \
+    && ln -s /usr/sbin/zerotier-one /usr/sbin/zerotier-cli
+
+# cleanup installation artifacts
+RUN    echo "*** cleanup ***" \
+    && apt-get clean \
+    && rm -rf \
+    /tmp/* \
+    /var/lib/apt/lists/* \
+    /var/tmp/*
+
 
 # ports and volumes
-EXPOSE 53 53/udp
+EXPOSE 5053 5053/udp
 VOLUME /config
