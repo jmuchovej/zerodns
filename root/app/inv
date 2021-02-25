@@ -1,3 +1,0 @@
-#!/usr/bin/with-contenv bash
-
-inv -r /app -f /config/config.yml $@ >> /config/ztdns.log 2> /config/ztdns.err.log

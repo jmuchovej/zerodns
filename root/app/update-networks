@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+mkdir /var/lib/zerotier-one/networks.d > /dev/null 2> /dev/null
+cd /config
+find *.conf | xargs -I {} ln -sf /config/{} /var/lib/zerotier-one/networks.d/{}

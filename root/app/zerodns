@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+from pathlib import Path
+from collections import namedtuple
+
+import click
+import pandas as pd
+
+import utils
+
+
+@click.group()
+@click.pass_context
+def zerodns(ctx: click.Context) -> None:
+    network_hexids = Path("/config").glob("*.conf")
+    network_hexids = list(filter(lambda x: "local" not in x.stem, network_hexids))
+    network_hexids = list(map(lambda x: x.stem, network_hexids))
+
+    network_humans = [utils.ztc_get_networks(network) for network in network_hexids]
+
+    tlds = ["com"] * len(network_humans)
+    domains = [f"{network}.{tld}" for network, tld in zip(network_humans, tlds)]
+
+    ZeroDNS = namedtuple("ZeroDNS", ("domains", "networks", "readable"))
+    ctx.obj = ZeroDNS(domains, network_hexids, network_humans)
+
+
+@zerodns.command()
+@click.pass_context
+def update_hosts(ctx: click.Context) -> None:
+    hosts = [utils.add_host(ip="127.0.0.1", aliases=["localhost"])]
+    for net, tld in zip(ctx.obj.networks, ctx.obj.domains):
+        members = utils.ztc_to_csv(net, tld)
+        hosts += members.apply(utils.member_to_host, axis=1).tolist()
+
+    with open("/config/hosts", "w") as zthosts:
+        zthosts.writelines(hosts)
+
+
+if __name__ == "__main__":
+    zerodns()

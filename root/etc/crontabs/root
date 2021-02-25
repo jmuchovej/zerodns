@@ -6,5 +6,5 @@
 0       3       *       *       6       run-parts /etc/periodic/weekly
 0       5       1       *       *       run-parts /etc/periodic/monthly
 # renew Hosts and CoreDNS configurations
-*/15    *       *       *       *       /app/inv ztdns.update-hosts
-*/15    *       *       *       *       /app/inv ztdns.update-coredns
+*/15    *       *       *       *       /app/zerodns update-hosts
+*/15    *       *       *       *       /app/update-networks

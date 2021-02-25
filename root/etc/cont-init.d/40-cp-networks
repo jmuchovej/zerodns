@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv bash
+
+# Link ZeroTier <network>.conf files to the right location
+/app/update-networks
