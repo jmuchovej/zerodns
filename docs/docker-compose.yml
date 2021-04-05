@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  zerodns:
+    container_name: zerodns
+    image: jmuchovej/zerodns:latest
+    ports:
+      - "5053:5053/udp"
+      - "5053:5053/tcp"
+    volumes:
+      - "/path/to/zerodns/config:/config"
+    devices: 
+      - "/dev/net/tun"
+    cap_add:
+      - "NET_ADMIN"
+      - "SYS_ADMIN"
+    restart: unless-stopped
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: America/New_York
+      ACCESS_TOKEN: "your secret token made at https://my.zerotier.com/account"
+    dns:
+      - "127.0.0.1"
+      - "1.1.1.1"
+      - "1.0.0.1"
