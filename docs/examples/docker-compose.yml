@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  zerodns:
+    container_name: zerodns
+    image: jmuchovej/zerodns:latest
+    ports:
+      - "53:5053/udp"
+      - "53:5053/tcp"
+    devices: 
+      - "/dev/net/tun"
+    cap_add:
+      - "NET_ADMIN"
+      - "SYS_ADMIN"
+    restart: unless-stopped
+    # All items above this line should be left untouched
+    volumes:
+      - "/path/to/zerodns/config:/config"
+    environment:
+      # This should be replace with the output of `id -u`
+      PUID: 1000
+      # This should be replace with the output of `id -g`
+      PGID: 1000
+      # This should closely match your `/etc/localtime`
+      TZ: America/New_York
+      # Your Access Token (described below)
+      ACCESS_TOKEN: "SomeSuperDuperSecretToken"
+      # TLDs are the ".com", ".org", etc. parts of a URL.
+      TLDS: .com,.zt
+    dns:
+      - "127.0.0.1" # KEEP this entry, it MUST be first
+      - "1.1.1.1"  # Change this to your preferred DNS servers
+      - "1.0.0.1"  # Change this to your preferred DNS servers
