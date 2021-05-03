@@ -1,0 +1,5 @@
+*
+!CoreDNS
+!ZeroTier
+!root
+!Dockerfile
