@@ -1,0 +1,38 @@
+version: "3.8"
+
+networks:
+  default:
+    name: apps
+
+x-base-args: &base-args
+  restart: unless-stopped
+  logging:
+    options:
+      max-size: "10M"
+      max-file: "5"
+  env_file:
+    - "${APPDIR}/.env.global"
+
+services:
+
+  zerodns:
+    <<: *base-args
+    image: jmuchovej/zerodns:latest
+    # network_mode: host
+    ports:
+      - 53:5353/udp
+      - 53:5353/tcp
+    volumes:
+      - "/path/to/zerodns:/config:rw"
+      - "./root/app:/app"
+    devices:
+      - "/dev/net/tun"
+    cap_add:
+      - "NET_ADMIN"
+      - "SYS_ADMIN"
+    # NOTE you need either an `environment` or `env_file` block!
+    dns:
+      - 127.0.0.1
+      - 1.1.1.1
+      - 1.0.0.1
+
