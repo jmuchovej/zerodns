@@ -19,11 +19,11 @@ jobs:
     - id: release
       if: steps.meta.outputs.createRelease == 'true'
       name: "Create Release"
-      uses: actions/create-release@v1
+      uses: marvinpinto/action-automatic-releases@latest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.meta.outputs.vZeroDNS }}
-        release_name: "Upgrade to CoreDNS: ${{ steps.meta.outputs.vCoreDNS }}"
+        tag_name: ${{ steps.meta.outputs.ZeroDNS }}
+        release_name: "${{ steps.meta.outputs.title }}"
         body: ${{ steps.meta.outputs.body }}
-        prerelease: true
+        draft: ${{ steps.meta.outputs.draftRelease }}
