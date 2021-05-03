@@ -5,6 +5,7 @@ import subprocess
 import shlex
 import functools
 from pathlib import Path
+from collections import defaultdict
 
 import pandas as pd
 from word2number import w2n
@@ -19,8 +20,8 @@ def ztc_get_networks(network: str) -> str:
         return proc.stdout.read().decode("utf-8").strip()
 
 
-def ztc_to_csv(network: str, tld: str) -> pd.DataFrame:
-    cmd = shlex.split(f"ztc member:list --csv {network}")
+def ztc_to_host(network: str, tld: str) -> pd.DataFrame:
+    cmd = shlex.split(f"ztc member:list {network} --csv --filter=Authorized=true")
     with shell(cmd) as proc:
         members = io.StringIO(proc.stdout.read().decode("utf-8"))
 
@@ -31,7 +32,14 @@ def ztc_to_csv(network: str, tld: str) -> pd.DataFrame:
     df["TLD"] = tld
 
     df = df.rename(columns={"IP-Assignments": "IP", "Node-ID": "Node"})
-    return df
+
+    hosts = defaultdict(list)
+    for idx, row in df.iterrows():
+        aliases = host_abbr(f"{row.Name}.{row.TLD}")
+        aliases += [row.Name, row.Node, f"{row.Node}.{row.Network}"]
+        hosts[row.IP] += aliases
+
+    return hosts
 
 
 def add_host(ip: str, aliases: list) -> str:
