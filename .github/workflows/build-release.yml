@@ -23,7 +23,6 @@ jobs:
       run: |
         ./scripts/download-extract "CoreDNS" "coredns/coredns"
         ./scripts/download-extract "ZeroTier" "zerotier/ZeroTierOne"
-        ls -la
     - id: login-dockerhub-registry
       name: "Login to DockerHub Registry"
       uses: docker/login-action@v1
@@ -49,6 +48,7 @@ jobs:
       name: "Build and push Docker images"
       uses: docker/build-push-action@v2.2.1
       with:
+        context: .
         push: true
         platforms: linux/amd64,linux/arm64
         tags: |
