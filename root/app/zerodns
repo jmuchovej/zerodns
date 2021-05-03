@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+import os
+import itertools
 from pathlib import Path
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 import click
 import pandas as pd
@@ -11,29 +13,41 @@ import utils
 @click.group()
 @click.pass_context
 def zerodns(ctx: click.Context) -> None:
-    network_hexids = Path("/config").glob("*.conf")
-    network_hexids = list(filter(lambda x: "local" not in x.stem, network_hexids))
-    network_hexids = list(map(lambda x: x.stem, network_hexids))
+    hexids = Path("/config").glob("*.conf")
+    hexids = list(filter(lambda x: "local" not in x.stem, hexids))
+    hexids = list(map(lambda x: x.stem, hexids))
 
-    network_humans = [utils.ztc_get_networks(network) for network in network_hexids]
+    humans = [utils.ztc_get_networks(network) for network in hexids]
 
-    tlds = ["com"] * len(network_humans)
-    domains = [f"{network}.{tld}" for network, tld in zip(network_humans, tlds)]
+    tlds = os.getenv("TLDS", "com").split(",")
+    tlds = [(tld[1:] if tld.startswith(".") else tld) for tld in tlds]
+
+    zdomains, zhexids, zhumans = [], [], []
+    for net, tld in itertools.product(humans, tlds):
+        idx = humans.index(net)
+        zdomains.append(f"{net}.{tld}")
+        zhexids.append(hexids[idx])
+        zhumans.append(humans[idx])
 
     ZeroDNS = namedtuple("ZeroDNS", ("domains", "networks", "readable"))
-    ctx.obj = ZeroDNS(domains, network_hexids, network_humans)
+    ctx.obj = ZeroDNS(zdomains, zhexids, zhumans)
 
 
 @zerodns.command()
 @click.pass_context
 def update_hosts(ctx: click.Context) -> None:
-    hosts = [utils.add_host(ip="127.0.0.1", aliases=["localhost"])]
+    hosts = defaultdict(list)
+    hosts["127.0.0.1"].append("localhost")
+
     for net, tld in zip(ctx.obj.networks, ctx.obj.domains):
-        members = utils.ztc_to_csv(net, tld)
-        hosts += members.apply(utils.member_to_host, axis=1).tolist()
+        members = utils.ztc_to_host(net, tld)
+        for ip, aliases in members.items():
+            hosts[ip] += aliases
 
     with open("/config/hosts", "w") as zthosts:
-        zthosts.writelines(hosts)
+        for ip, aliases in hosts.items():
+            aliases = list(set(aliases))
+            zthosts.write(f"{ip:15s} {' '.join(aliases)}\n")
 
 
 if __name__ == "__main__":
