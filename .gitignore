@@ -1,1 +1,4 @@
 !scripts/
+
+# Don't track the docker-compose file; but leave a demo for development
+docker-compose.yml
