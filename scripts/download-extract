@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+# TODO determine if it's feasible to translate all/most of `version-bump` to bash
+# function version() {
+#     tool=${1}
+#     repo=${2}
+#     release=$(curl https://api.github.com/repos/${repo}/releases/latest)
+
+#     cat << __tool__ > ${tool}.conf
+# upstream=$(echo ${release} | jq ."tag_name")
+# tarball=$(echo ${release} | jq ."tarball_url")
+# release=$(echo ${release} | jq ."url")
+# current=$(docker inspect ${GITHUB_REPOSITORY}:latest | jq ".[0].Config.Labels.${tool}")
+# __tool__
+# }
+
+# version "CoreDNS" "coredns/coredns"
+# version "ZeroTier" "zerotier/ZeroTierOne"
+# version "ZeroDNS" "jmuchovej/zerodns"
+
+# TODO determine if it's feasible to translate all/most of `version-bump` to bash
+# function download() {
+#     tool=${1}
+#     repo=${2}
+#     tarball="$(grep "tarball" ${tool}.conf | cut -d "=" -f 2 | tr -d '"')"
+# 
+#     mkdir ${tool}
+#     wget ${tarball} -O ${tool}.tar.gz
+#     tar xzf ${tool}.tar.gz --strip-components 1 -C ${tool}
+#     rm ${tool}.tar.gz
+# }
+
+# download "CoreDNS" "coredns/coredns"
+# download "ZeroTier" "zerotier/ZeroTierOne"
+
+tool=${1}
+repo=${2}
+tarball=$(curl https://api.github.com/repos/${repo}/releases/latest | jq ."tarball_url" | tr -d '"')
+
+mkdir ${tool}
+wget ${tarball} -O ${tool}.tar.gz
+tar xzf ${tool}.tar.gz --strip-components 1 -C ${tool}
+rm ${tool}.tar.gz

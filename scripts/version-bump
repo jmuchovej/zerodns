@@ -8,76 +8,63 @@ from argparse import ArgumentParser
 
 import docker
 import requests
-from packaging.version import parse
+from packaging import version
+
+RELEASE_URL = "https://api.github.com/repos/{repo}/releases/latest"
+RELEASE_TAG = "https://github.com/{repo}/releases/tag/{tag}"
+
+repos = {
+    "CoreDNS": "coredns/coredns",
+    "ZeroTier": "zerotier/ZeroTierOne",
+}
 
 
-def get_upstream_CoreDNS_version(arm: bool):
-    """Retrieves the latest CoreDNS release from the CoreDNS GitHub repository. Additionally provides the Package and Release URLs to use in ZeroDNS Docker container and Release Notes.
-    """
-    url = "https://api.github.com/repos/coredns/coredns/releases/latest"
-    release = json.loads(requests.get(url).content)
-
-    CoreDNS = parse(release["tag_name"])
-
-    lookup = "linux_amd64" if not arm else "linux_arm64"
-    pkg_url = next(filter(lambda x: lookup in x["name"], release["assets"]))
-    pkg_url = pkg_url["browser_download_url"]
-    release_info = release["url"]
-
-    return CoreDNS, pkg_url, release_info
+def get_upstream_version(repo: str) -> Tuple:
+    url = RELEASE_URL.format(repo=repo)
+    tag = json.loads(requests.get(url).content)["tag_name"]
+    return version.parse(tag), tag
 
 
-def get_current_CoreDNS_version():
+def get_current_versions(dep: str):
     """Retrieves the current CoreDNS version within the ZeroDNS container.
     """
     image = os.environ["GITHUB_REPOSITORY"]
     client = docker.from_env()
     client.images.pull(f"{image}", tag="latest")
-    container = client.images.get(f"{image}:latest")
-    labels = container.attrs["Config"]["Labels"]
+    labels = client.images.get(f"{image}:latest").attrs["Config"]["Labels"]
 
-    CoreDNS = parse(labels["vCoreDNS"])
-    ZeroDNS = parse(labels["vZeroDNS"])
-
-    return CoreDNS, ZeroDNS
+    return version.parse(labels.get(dep, "") or "0")
 
 
-def ZeroDNS_update(vZeroDNS: str) -> Tuple[Dict, bool]:
-    """Allows for ZeroDNS version to be manually updated and allows for version-bumping based on CoreDNS changes.
+def update(dep: str) -> Dict[str, object]:
+    outputs = {
+        "diff": {},
+        "body": {},
+        "majorUpgrade": {}
+    }
 
-    Params:
-    .. vZeroDNS: manually supplied ZeroDNS version
-    """
-    _, c_ZeroDNS = get_current_CoreDNS_version()
-    u_ZeroDNS = parse(vZeroDNS)
+    if dep in repos:
+        key = f"v{dep}"
+        upstream, tagname = get_upstream_version(repos[dep])
+    else:
+        key = "vZeroDNS"
+        upstream, tagname = version.parse(dep), None
 
-    ZeroDNS = max(c_ZeroDNS, u_ZeroDNS)
+    current = get_current_versions(key)
 
-    outputs = dict()
-    outputs["vZeroDNS"] = ZeroDNS
+    outputs[key] = max(current, upstream)
+    outputs["diff"][key] = current != outputs[key] and sum(current.release) > 0
 
-    return outputs, c_ZeroDNS != ZeroDNS
+    if tagname and outputs["diff"][key]:
+        url = RELEASE_TAG.format(repo=repos[dep], tag=tagname)
+        outputs["body"][key] = dedent(f"""
+        ## Changes to {key}
+        - Upgrading from `{current}` -> `{upstream}`.
+        - Inspect the changes [here]({url}).
+        """)
+        outputs[f"majorUpgrade"][key] = bool(upstream.major - current.major)
 
-
-def CoreDNS_update(arm: bool = False) -> Tuple[Dict, bool]:
-    """Gathers CoreDNS version info, determines latest version, how it upgraded, and release contents.
-    """
-    u_CoreDNS, pkg_url, release_info = get_upstream_CoreDNS_version(arm)
-    c_CoreDNS, _ = get_current_CoreDNS_version()
-
-    CoreDNS = max(c_CoreDNS, u_CoreDNS)
-
-    outputs = dict()
-    outputs["vCoreDNS"] = CoreDNS
-    outputs["CoreDNSpkg"] = pkg_url
-    outputs["body"] = dedent(f"""
-    ## Changes to CoreDNS
-    - CoreDNS Version: `{c_CoreDNS}` -> `{u_CoreDNS}`.
-    - Inspect the changes [here]({release_info}).
-    """)
-    outputs["majorUpgradeCoreDNS"] = bool(u_CoreDNS.major - c_CoreDNS.major)
-
-    return outputs, c_CoreDNS != CoreDNS
+    return outputs
 
 
 if __name__ == "__main__":
@@ -85,30 +72,34 @@ if __name__ == "__main__":
 
     parser = ArgumentParser()
     parser.add_argument("vZeroDNS", nargs="?", type=str)
-    parser.add_argument("--arm", action="store_true")
     args = parser.parse_args()
 
-    outputs = dict()
-    out_ZeroDNS, diff_ZeroDNS = ZeroDNS_update(args.vZeroDNS or "")
-    out_CoreDNS, diff_CoreDNS = CoreDNS_update(args.arm)
+    actions = dict()
+    outputs = update(args.vZeroDNS or "ZeroDNS")
+    actions["vZeroDNS"] = outputs["vZeroDNS"]
 
-    outputs.update(out_ZeroDNS)
-    outputs.update(out_CoreDNS)
+    for dep in repos.keys():
+        out = update(dep)
+        key = next(filter(lambda k: dep in k, out.keys()))
+        actions[key] = out[key]
 
-    outputs["differs"] = str(diff_ZeroDNS or diff_CoreDNS).lower()
+        for key, val in out.items():
+            if key in outputs:
+                outputs[key].update(val)
 
-    patch_bump = not outputs["majorUpgradeCoreDNS"] and diff_CoreDNS
-    create_release = patch_bump or diff_ZeroDNS
+    diff = any(outputs["diff"].values())
+    actions["draftRelease"] = any(outputs["majorUpgrade"].values())
+    actions["createRelease"] = diff and not outputs["diff"]["vZeroDNS"]
+    actions["body"] = "".join(list(outputs["body"].values()))
 
-    if patch_bump:
-        zdns = outputs["vZeroDNS"]
-        outputs["vZeroDNS"] = parse(f"{zdns.major}.{zdns.minor}.{zdns.micro + 1}")
-    else:
-        del outputs["body"]
+    if actions["createRelease"] and not actions["draftRelease"]:
+        z = actions["vZeroDNS"]
+        actions["vZeroDNS"] = version.parse(f"{z.major}.{z.minor}.{z.micro + 1}")
+        actions["title"] = f"v{actions['vZeroDNS']}"
 
-    outputs["createRelease"] = str(create_release).lower()
+    if not actions["createRelease"]:
+        del actions["draftRelease"]
+        del actions["body"]
 
-    del outputs["majorUpgradeCoreDNS"]
-
-    for key, value in outputs.items():
+    for key, value in actions.items():
         print(f"::set-output name={key}::{value}")
