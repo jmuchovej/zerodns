@@ -88,8 +88,8 @@ if __name__ == "__main__":
                 outputs[key].update(val)
 
     diff = any(outputs["diff"].values())
-    actions["draftRelease"] = any(outputs["majorUpgrade"].values())
-    actions["createRelease"] = diff and not outputs["diff"]["vZeroDNS"]
+    actions["draftRelease"] = str(any(outputs["majorUpgrade"].values())).lower()
+    actions["createRelease"] = str(diff and not outputs["diff"]["vZeroDNS"]).lower()
     actions["body"] = "".join(list(outputs["body"].values()))
 
     if actions["createRelease"] and not actions["draftRelease"]:
