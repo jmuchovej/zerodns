@@ -4,4 +4,4 @@
 
 ztc conf:set --token "${ACCESS_TOKEN}" >/dev/null 2>/dev/null
 
-exec /usr/sbin/zerotier-one
+[ -f /usr/sbin/zerotier-one ] && exec /usr/sbin/zerotier-one
