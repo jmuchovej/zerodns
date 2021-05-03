@@ -8,7 +8,7 @@ docker run \
     --restart unless-stopped \
     --cap-add NET_ADMIN --cap-add SYS_ADMIN \
     --device /dev/net/tun \
-    -p 5053:5053/udp -p 5053:5053/tcp \
+    -p 53:5353/udp -p 53:5353/tcp \
     -v "/path/to/zerodns/config:/config" \
     -e PUID=1000 -e PGID=1000 -e TZ="America/New_York" \
     -e ACCESS_TOKEN="SomeSuperDuperSecretToken" \

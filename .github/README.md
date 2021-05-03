@@ -37,5 +37,5 @@ configurations confusing, you should take a look at the
 [myzt]: https://my.zerotier.com/
 [docs]: https://john.muchovej.com/docs/zerodns/configuration/
 [docker]: blob/main/docs/examples/docker.sh
-[compose]: blob/main/examples/docker-compose.yml
+[compose]: blob/main/docs/examples/docker-compose.yml
 [lsio-docs]: https://docs.linuxserver.io/

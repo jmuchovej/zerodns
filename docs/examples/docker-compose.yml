@@ -5,9 +5,9 @@ services:
     container_name: zerodns
     image: jmuchovej/zerodns:latest
     ports:
-      - "53:5053/udp"
-      - "53:5053/tcp"
-    devices: 
+      - "53:5353/udp"
+      - "53:5353/tcp"
+    devices:
       - "/dev/net/tun"
     cap_add:
       - "NET_ADMIN"
