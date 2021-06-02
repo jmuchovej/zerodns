@@ -1,8 +1,17 @@
+# Check out [ZeroNS][zerons] from ZeroTier!
+
+I'll keep this project unarchived until ZeroNS launches full support for Docker;
+but otherwise, they have a pretty great solution (plus it's managed by ZeroTier.
+😉)
+
+[zerons]: https://github.com/zerotier/zeronsd
+
 # ZeroDNS
 
 ![Docker Builds](https://github.com/ionlights/zerodns/workflows/Docker%20Builds/badge.svg)
 ![Docker Pulls](https://img.shields.io/docker/pulls/jmuchovej/zerodns)
 ![GitHub](https://img.shields.io/github/license/jmuchovej/zerodns)
+
 
 `ZeroDNS` is a CoreDNS-based Docker container that allows for name resolution
 of your [ZeroTier][zt] peers.
